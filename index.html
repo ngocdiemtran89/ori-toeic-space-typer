@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>TOEIC Space Typer — Bắn máy bay học từ vựng</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:#0a1430;color:#fff;min-height:100vh}
+  .wrap{max-width:560px;margin:0 auto;padding:14px 12px 30px}
+  h1{font-size:26px;text-align:center;color:#ffd84d;letter-spacing:.5px}
+  .sub{text-align:center;color:#c3d0f2;font-size:15px;margin:4px 0 14px}
+  .card{background:#1b2c60;border:1px solid #3a4f8f;border-radius:16px;padding:14px;margin-bottom:12px}
+  .card h2{font-size:17px;color:#8fd8ff;margin-bottom:10px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .topic{border:1px solid #46619f;background:#22356e;color:#fff;border-radius:12px;padding:10px 8px;font-size:15px;cursor:pointer;text-align:left;line-height:1.3}
+  .topic small{display:block;color:#c3d0f2;font-size:12px;margin-top:2px}
+  .topic.sel{border-color:#ffd84d;background:#2a2450;box-shadow:0 0 0 2px #ffd84d55}
+  .topic.all{grid-column:1/-1;text-align:center}
+  .modes{display:flex;gap:8px}
+  .mode{flex:1;border:1px solid #46619f;background:#22356e;color:#fff;border-radius:12px;padding:10px;font-size:14px;cursor:pointer}
+  .mode small{display:block;color:#c3d0f2;font-size:12px;margin-top:2px}
+  .mode.sel{border-color:#4ade80;background:#12351f;box-shadow:0 0 0 2px #4ade8055}
+  .bigbtn{display:block;width:100%;border:0;border-radius:14px;padding:14px;font-size:18px;font-weight:700;cursor:pointer;background:#ffd84d;color:#1a1400}
+  .bigbtn:active{transform:scale(.98)}
+  .how{font-size:14px;line-height:1.7;color:#dbe4ff}
+  .how b{color:#ffd84d}
+  #gameScreen,#resultScreen{display:none}
+  .hud{display:flex;justify-content:space-between;align-items:center;font-size:16px;font-weight:700;margin-bottom:8px;flex-wrap:wrap;gap:6px}
+  .hud .lives{color:#ff5d73}
+  .bar{height:10px;background:#2a3f7d;border-radius:99px;overflow:hidden;margin:8px 0}
+  .bar i{display:block;height:100%;background:linear-gradient(90deg,#4ade80,#ffd84d);width:0%}
+  #cv{display:block;width:100%;background:radial-gradient(ellipse at 50% 0%,#2a4a9e 0%,#0c1738 70%);border:1px solid #3a4f8f;border-radius:16px;touch-action:none}
+  #typebox{width:100%;margin-top:10px;padding:13px 14px;font-size:22px;border-radius:12px;border:2px solid #ffd84d;background:#16224f;color:#fff;outline:none;text-align:center;letter-spacing:1px}
+  .row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+  .smallbtn{flex:1 1 40%;border:1px solid #46619f;background:#22356e;color:#fff;border-radius:12px;padding:10px;font-size:13px;cursor:pointer}
+  #toast{text-align:center;min-height:24px;font-size:16px;font-weight:600;color:#8fd8ff;margin-top:8px}
+  .stat{display:flex;justify-content:space-between;font-size:16px;padding:7px 0;border-bottom:1px dashed #24315e}
+  .miss{font-size:15px;line-height:1.8;color:#e6ecff}
+  .miss b{color:#ffd84d}
+  .foot{text-align:center;color:#aab8dd;font-size:12px;margin-top:14px;line-height:1.6}
+  .ori{text-align:center;margin:8px 0 14px}
+  .ori b{display:inline-block;background:linear-gradient(90deg,#ffd84d,#ff9a3d);color:#1a1400;border-radius:99px;padding:6px 16px;font-size:14px;letter-spacing:1px}
+  .promo{background:linear-gradient(135deg,#1c2a5e,#3b1d5e);border:1px solid #ffd84d66}
+  .promo p{font-size:14px;line-height:1.7;color:#ffe9a8}
+  .promo b{color:#ffd84d}
+  .brandline{text-align:center;color:#c3d0f2;font-size:13px;margin-top:10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="menuScreen">
+    <h1>🚀 TOEIC SPACE TYPER</h1>
+    <p class="sub">Gõ chữ để bắn máy bay — học từ vựng Hacker TOEIC theo chủ đề</p>
+    <div class="ori"><b>✈️ ORI ACADEMY</b></div>
+    <div class="card">
+      <h2>1. Chọn chủ đề</h2>
+      <div class="grid" id="topicGrid"></div>
+    </div>
+    <div class="card">
+      <h2>2. Chọn cách chơi</h2>
+      <div class="modes">
+        <button class="mode sel" id="modeEasy">🌟 Dễ — Luyện gõ<small>Địch hiện từ tiếng Anh + nghĩa, em gõ theo</small></button>
+        <button class="mode" id="modeHard">🔥 Khó — Nhớ từ thật<small>Địch chỉ hiện nghĩa tiếng Việt, em tự nhớ từ</small></button>
+      </div>
+    </div>
+    <div class="card how">
+      <b>Cách chơi:</b> Đĩa bay mang từ bay xuống. Gõ đúng từ để bắn hạ nó trước khi
+      nó chạm đất. Gõ sai không sao, cứ gõ lại. Mỗi chủ đề có 3 mạng. Bắn hết từ
+      trong chủ đề là thắng. Từ nào bị rơi sẽ gom vào danh sách ôn lại cuối trận.
+    </div>
+    <button class="bigbtn" id="startBtn">▶ BẮT ĐẦU CHƠI</button>
+    <div style="height:12px"></div>
+    <div class="card promo">
+      <h2>🎓 Muốn học TOEIC bài bản hơn?</h2>
+      <p>Game này chỉ là khởi động. Tại <b>ORI Academy</b>, em được chẩn đoán điểm yếu,
+      xây nền tảng rồi luyện đúng dạng bẫy đề thi — không học vẹt.<br>
+      📱 <b>Inbox ORI</b> để nhận lộ trình 1:1 và <b>2 buổi học thử miễn phí</b><br>
+      ☎️ 0778 845 689 (Mrs Loan) • 0906 303 373 (Mrs Diễm)<br>
+      📍 135 Bạch Đằng, P. Tân Sơn Hòa, TP.HCM</p>
+    </div>
+    <p class="foot">Nguồn từ: Hacker TOEIC Vocabulary — Days 1–17 (328 từ)<br>Chơi offline, không cần mạng sau khi mở file.</p>
+  </div>
+
+  <div id="gameScreen">
+    <div class="hud">
+      <span>⭐ <span id="score">0</span></span>
+      <span>🔥 Combo <span id="combo">0</span></span>
+      <span class="lives" id="lives">♥♥♥</span>
+      <span>🎯 <span id="kills">0</span>/<span id="total">0</span></span>
+    </div>
+    <div class="bar"><i id="prog"></i></div>
+    <canvas id="cv" width="520" height="620"></canvas>
+    <input id="typebox" type="text" placeholder="Gõ từ vào đây…" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <div class="row">
+      <button class="smallbtn" id="hintBtn">💡 Gợi ý</button>
+      <button class="smallbtn" id="soundBtn">🔊 Âm thanh: Bật</button>
+      <button class="smallbtn" id="musicBtn">🎵 Nhạc nền: Bật</button>
+      <button class="smallbtn" id="quitBtn">🏳️ Dừng chơi</button>
+    </div>
+    <div id="toast"></div>
+    <div class="brandline">✈️ ORI ACADEMY • Hotline 0778 845 689 • 0906 303 373</div>
+  </div>
+
+  <div id="resultScreen">
+    <h1 id="resultTitle">🎉 Thắng rồi!</h1>
+    <p class="sub" id="resultSub"></p>
+    <div class="card">
+      <div class="stat"><span>Điểm số</span><b id="rScore"></b></div>
+      <div class="stat"><span>Bắn hạ</span><b id="rKills"></b></div>
+      <div class="stat"><span>Độ chính xác gõ</span><b id="rAcc"></b></div>
+      <div class="stat"><span>Combo cao nhất</span><b id="rCombo"></b></div>
+    </div>
+    <div class="card">
+      <h2>📝 Từ cần ôn lại</h2>
+      <div class="miss" id="rMiss"></div>
+    </div>
+    <button class="bigbtn" id="listenMissBtn" style="background:#4ade80;color:#062b12">🔊 Nghe lại các từ đã rơi</button>
+    <div style="height:10px"></div>
+    <div class="card promo">
+      <h2>🚀 Nhớ từ chưa đủ — cần lộ trình?</h2>
+      <p><b>ORI Academy</b> — TOEIC giỏi, kiến thức chắc, sự nghiệp cất cánh cùng ORI.<br>
+      📱 Inbox ORI nhận lộ trình 1:1 + 2 buổi học thử miễn phí<br>
+      ☎️ 0778 845 689 • 0906 303 373 • 📍 135 Bạch Đằng, P. Tân Sơn Hòa, TP.HCM</p>
+    </div>
+    <button class="bigbtn" id="againBtn">↻ Chơi lại chủ đề này</button>
+    <div style="height:10px"></div>
+    <button class="bigbtn" id="reviewBtn" style="background:#7fd4ff">📚 Chỉ chơi từ đã rơi</button>
+    <div style="height:10px"></div>
+    <button class="bigbtn" id="menuBtn" style="background:#2c3f74;color:#fff">🏠 Đổi chủ đề</button>
+  </div>
+</div>
+
+<script>
+const DATA = {"topics": {"1": "Tuyển dụng", "2": "Phép tắc - Quy định", "3": "Công việc văn phòng (1)", "4": "Công việc văn phòng (2)", "5": "Công việc văn phòng (3)", "6": "Thời gian rảnh - Cộng đồng", "7": "Marketing (1)", "8": "Marketing (2)", "9": "Kinh tế", "10": "Mua sắm", "11": "Phát triển sản phẩm", "12": "Sản xuất", "13": "Dịch vụ khách hàng", "14": "Du lịch - Sân bay", "15": "Hợp đồng", "16": "Giao dịch", "17": "Thương mại - Vận chuyển"}, "days": {"1": [{"w": "opening", "pos": "n", "vi": "vị trí trống, sự mở cửa, lễ khai trương"}, {"w": "applicant", "pos": "n", "vi": "ứng viên, người xin việc"}, {"w": "candidate", "pos": "n", "vi": "thí sinh, ứng viên"}, {"w": "interview", "pos": "n", "vi": "cuộc phỏng vấn"}, {"w": "impressed", "pos": "adj", "vi": "có ấn tượng, cảm phục"}, {"w": "excellent", "pos": "adj", "vi": "xuất sắc, vượt trội, ưu tú"}, {"w": "eligible", "pos": "adj", "vi": "có đủ tư cách, thích hợp"}, {"w": "identify", "pos": "v", "vi": "nhận diện, nhận ra"}, {"w": "employment", "pos": "n", "vi": "việc làm"}, {"w": "managerial", "pos": "adj", "vi": "thuộc về quản lý"}, {"w": "diligent", "pos": "adj", "vi": "siêng năng, cần cù"}, {"w": "prospective", "pos": "adj", "vi": "có triễn vọng, có tiềm năng, có tương lai"}, {"w": "apprehensive", "pos": "adj", "vi": "lo lắng, e sợ"}, {"w": "consultant", "pos": "n", "vi": "người tư vấn, cố vấn"}, {"w": "degree", "pos": "n", "vi": "trình độ, bằng cấp"}, {"w": "payroll", "pos": "n", "vi": "bảng lương, tổng quỹ lương"}], "2": [{"w": "attire", "pos": "n", "vi": "quần áo, cách ăn mặc"}, {"w": "code", "pos": "n", "vi": "quy định, điều lệ, mật mã"}, {"w": "concern", "pos": "n", "vi": "sự lo lắng, mối quan ngại"}, {"w": "policy", "pos": "n", "vi": "quy chế, chính sách"}, {"w": "regulation", "pos": "n", "vi": "quy định, quy tắc, điều lệ"}, {"w": "severely", "pos": "adv", "vi": "nghiêm khắc, khắt khe; gay go, dữ dội"}, {"w": "permission", "pos": "n", "vi": "sự cho phép"}, {"w": "access", "pos": "n", "vi": "quyền truy cập, sự lui tới, đường vào"}, {"w": "approval", "pos": "n", "vi": "sự chấp thuận, sự phê duyệt"}, {"w": "form", "pos": "n", "vi": "kiểu, loại, hình thức"}, {"w": "arrangement", "pos": "n", "vi": "sự sắp xếp, sự sắp đặt, sự chuẩn bị"}, {"w": "procedure", "pos": "n", "vi": "thủ tục"}, {"w": "negative", "pos": "adj", "vi": "tiêu cực, bi quan"}, {"w": "drastically", "pos": "adv", "vi": "một cách mạnh mẽ, quyết liệt, triệt để"}, {"w": "standard", "pos": "n", "vi": "tiêu chuẩn, chuẩn, trình độ"}, {"w": "constant", "pos": "adj", "vi": "liên tục, không ngớt, không dứt"}, {"w": "ban", "pos": "n", "vi": "lệnh cấm, sự cấm đoán"}, {"w": "obligation", "pos": "n", "vi": "nghĩa vụ, trách nhiệm"}, {"w": "prohibit", "pos": "v", "vi": "ngăn cấm, ngăn chặn, không cho phép"}, {"w": "habit", "pos": "n", "vi": "thói quen, tập quán"}, {"w": "legislation", "pos": "n", "vi": "sự làm luật, pháp luật, pháp chế"}], "3": [{"w": "accustomed", "pos": "adj", "vi": "quen với, thành thói quen"}, {"w": "corporation", "pos": "n", "vi": "công ty, tập đoàn"}, {"w": "demanding", "pos": "adj", "vi": "đòi hỏi khắt khe"}, {"w": "colleague", "pos": "n", "vi": "đồng nghiệp"}, {"w": "request", "pos": "n", "vi": "lời yêu cầu, lời thỉnh cầu"}, {"w": "manage", "pos": "v", "vi": "quản lý, xoay xở, giải quyết được"}, {"w": "directly", "pos": "adv", "vi": "trực tiếp, thẳng, ngay"}, {"w": "instruct", "pos": "v", "vi": "hướng dẫn, chỉ thị, dạy"}, {"w": "sample", "pos": "n", "vi": "vật mẫu, mẫu thử"}, {"w": "entire", "pos": "adj", "vi": "trọn vẹn, hoàn toàn"}, {"w": "extension", "pos": "n", "vi": "sự gia hạn, sự kéo dài, sự mở rộng, máy lẻ (điện thoại)"}, {"w": "attentively", "pos": "adv", "vi": "chăm chú, thận trọng"}, {"w": "supervision", "pos": "n", "vi": "sự giám sát"}, {"w": "workshop", "pos": "n", "vi": "hội thảo, buổi đào tạo"}, {"w": "reluctantly", "pos": "adv", "vi": "miễn cưỡng, bất đắc dĩ"}], "4": [{"w": "lax", "pos": "adj", "vi": "không cẩn thận, không chú ý, thiếu nghiệm túc"}, {"w": "combined", "pos": "adj", "vi": "được kết hợp, chung, tổng hợp"}, {"w": "voluntarily", "pos": "adv", "vi": "tự nguyện, tình nguyện"}, {"w": "undertake", "pos": "v", "vi": "đảm nhận, tiếp quản"}, {"w": "assume", "pos": "v", "vi": "cho rằng, giả sử (là đúng); đảm đương, gánh vác"}, {"w": "occasionally", "pos": "adv", "vi": "thỉnh thoảng, đôi khi"}, {"w": "employee", "pos": "n", "vi": "nhân viên, người lao động"}, {"w": "manner", "pos": "n", "vi": "cách, lối; thái độ, cử chỉ"}, {"w": "responsible", "pos": "adj", "vi": "có trách nhiệm, chịu trách nhiệm về"}, {"w": "adjust", "pos": "v", "vi": "điều chỉnh, làm cho thích hợp"}, {"w": "personnel", "pos": "n", "vi": "nhân viên, công chức"}, {"w": "coworker", "pos": "n", "vi": "đồng nghiệp"}, {"w": "leading", "pos": "adj", "vi": "dẫn đầu, tiên phong, hàng đầu"}, {"w": "hardly", "pos": "adv", "vi": "hiếm khi, khó khăn, hầu như không"}, {"w": "abstract", "pos": "adj", "vi": "trừu tượng, mơ hồ"}, {"w": "directory", "pos": "n", "vi": "danh bạ, sổ dịa chỉ"}, {"w": "skillfully", "pos": "adv", "vi": "thành thạo, khéo léo"}, {"w": "exclusive", "pos": "adj", "vi": "riêng biệt, độc quyền"}, {"w": "transform", "pos": "v", "vi": "biến đổi, thay đổi"}, {"w": "contrary", "pos": "n", "vi": "sự trái ngược, điều ngược lại"}, {"w": "disturbing", "pos": "adj", "vi": "làm nhiễu loạn, làm xáo trộn"}, {"w": "widely", "pos": "adv", "vi": "rộng, nhiều, xa"}], "5": [{"w": "sophisticated", "pos": "adj", "vi": "tinh vi, tinh tế, phức tạp, công phu"}, {"w": "timely", "pos": "adj", "vi": "kip thời"}, {"w": "promptly", "pos": "adv", "vi": "nhanh chóng, ngay lập tức, đúng giờ"}, {"w": "accessible", "pos": "adj", "vi": "có thể truy cập/tiếp cận được, có thể sử dụng được"}, {"w": "feedback", "pos": "n", "vi": "phản hồi, ý kiến nhận xét"}, {"w": "outstanding", "pos": "adj", "vi": "nổi bật, đáng chú ý; còn tồn tại, chưa trả (tiền nợ)"}, {"w": "explain", "pos": "v", "vi": "giải thích, giảng giải"}, {"w": "contain", "pos": "v", "vi": "bao gồm, chứa"}, {"w": "subsequent", "pos": "adj", "vi": "đến sau, xảy ra sau"}, {"w": "overview", "pos": "n", "vi": "tổng quát, khái quát"}, {"w": "provider", "pos": "n", "vi": "người cung cấp, nhà cung cấp"}, {"w": "matter", "pos": "n", "vi": "vấn đề, công việc"}, {"w": "expertise", "pos": "n", "vi": "sự tinh thông, sự thành thạo, kỹ năng chuyên môn"}, {"w": "essential", "pos": "adj", "vi": "cần thiết, thiết yếu, cốt yếu"}, {"w": "major", "pos": "adj", "vi": "chủ yếu, chủ chốt, trọng đại"}, {"w": "compliance", "pos": "n", "vi": "sự tuân theo, sự phục tùng (mệnh lệnh, luật pháp)"}, {"w": "aware", "pos": "adj", "vi": "biết, nhận thấy, nhận thức được"}, {"w": "extended", "pos": "adj", "vi": "mở rộng, kéo dài"}, {"w": "advisable", "pos": "adj", "vi": "nên làm, thích hợp"}], "6": [{"w": "collection", "pos": "n", "vi": "bộ sưu tập, sự thu thập, sự quyên góp"}, {"w": "exhibition", "pos": "n", "vi": "cuộc triển lăm, sự trưng bày"}, {"w": "celebrity", "pos": "n", "vi": "người nổi tiếng"}, {"w": "popular", "pos": "adj", "vi": "nổi tiếng, phổ biến"}, {"w": "donation", "pos": "n", "vi": "sự quyên góp, từ thiện, sự tặng"}, {"w": "admission", "pos": "n", "vi": "sự thú nhận, sự nhận vào, sự thu nạp"}, {"w": "banquet", "pos": "n", "vi": "bữa tiệc lớn"}, {"w": "anniversary", "pos": "n", "vi": "lễ kỷ niệm, ngày kỷ niệm"}, {"w": "required", "pos": "adj", "vi": "cần thiết, được yêu cầu, phải có"}, {"w": "rest", "pos": "v", "vi": "nghỉ ngơi, thư giãn"}, {"w": "fund-raising", "pos": "n", "vi": "việc gây quỹ"}, {"w": "edition", "pos": "n", "vi": "sự phát hành, sự xuất bản, lần in, phiên bản"}, {"w": "specifically", "pos": "adv", "vi": "cụ thể, rõ ràng, đặc trưng"}, {"w": "informative", "pos": "adj", "vi": "nhiều thông tin, có kiến thức, bổ ích"}, {"w": "audience", "pos": "n", "vi": "khán giả, thính giả"}, {"w": "author", "pos": "n", "vi": "tác giả"}, {"w": "beneficial", "pos": "adj", "vi": "có lợi, có ích"}, {"w": "lend", "pos": "v", "vi": "cho mượn, cho vay"}, {"w": "local", "pos": "adj", "vi": "địa phương, cục bộ"}, {"w": "variety", "pos": "n", "vi": "sự đa dạng, trạng thái khác nhau, giống, loại"}], "7": [{"w": "survey", "pos": "n", "vi": "cuộc khảo sát, cuộc thăm dò"}, {"w": "analysis", "pos": "n", "vi": "sự phân tích"}, {"w": "respondent", "pos": "n", "vi": "người trả lời"}, {"w": "monopoly", "pos": "n", "vi": "sự độc quyền, vật độc quyền"}, {"w": "competition", "pos": "n", "vi": "sự cạnh tranh, cuộc thi"}, {"w": "demand", "pos": "n", "vi": "nhu cầu"}, {"w": "expand", "pos": "v", "vi": "mở rộng"}, {"w": "advanced", "pos": "adj", "vi": "tiên tiến, cao cấp"}, {"w": "effective", "pos": "adj", "vi": "hiệu quả, có hiệu lực, có tác động"}, {"w": "very", "pos": "adv", "vi": "rất, hết sức"}, {"w": "expectation", "pos": "n", "vi": "sự mong muốn, kỳ vọng, dự kiến"}, {"w": "target", "pos": "n", "vi": "mục tiêu, đích"}, {"w": "campaign", "pos": "n", "vi": "chiến dịch, cuộc vận động"}, {"w": "probable", "pos": "adj", "vi": "nhiều khả năng, có thể, chắc hẳn"}, {"w": "impact", "pos": "n", "vi": "sự ảnh hưởng, sự tác động"}, {"w": "comparison", "pos": "n", "vi": "sự so sánh"}, {"w": "mounting", "pos": "adj", "vi": "tăng dần lên"}], "8": [{"w": "marginal", "pos": "adj", "vi": "ở mép, ngoài lề, không đáng kể"}, {"w": "customer", "pos": "n", "vi": "người tiêu dùng, khách hàng"}, {"w": "instantly", "pos": "adv", "vi": "ngay khi, ngay lập tức"}, {"w": "creative", "pos": "adj", "vi": "sáng tạo"}, {"w": "aggressively", "pos": "adv", "vi": "xông xáo, tích cực"}, {"w": "strategy", "pos": "n", "vi": "chiến lược"}, {"w": "experience", "pos": "n", "vi": "kinh nghiệm, sự trải nghiệm"}, {"w": "introduce", "pos": "v", "vi": "giới thiệu, đưa ra"}, {"w": "means", "pos": "n", "vi": "phương tiện, cách"}, {"w": "advantage", "pos": "n", "vi": "lợi ích, lợi thế"}, {"w": "forward", "pos": "adv", "vi": "về phía trước; tiến bộ"}, {"w": "discussion", "pos": "n", "vi": "sự thảo luận, sự tranh luận"}, {"w": "steadily", "pos": "adv", "vi": "vững chắc, bình tĩnh, kiên định"}, {"w": "necessarily", "pos": "adv", "vi": "tất yếu, nhất thiết"}, {"w": "less", "pos": "adj", "vi": "ít hơn, kém hơn"}, {"w": "majority", "pos": "n", "vi": "đa số, số đông"}, {"w": "largely", "pos": "adv", "vi": "trên quy mô lớn, phần lớn"}, {"w": "mastermind", "pos": "n", "vi": "quân sư, đạo diễn (kế hoạch)"}], "9": [{"w": "stagnant", "pos": "adj", "vi": "trì trệ, uể oải, lờ đờ"}, {"w": "dramatically", "pos": "adv", "vi": "đột ngột, đáng kể"}, {"w": "brisk", "pos": "adj", "vi": "sôi động, phát đạt, nhanh nhẹn"}, {"w": "unstable", "pos": "adj", "vi": "không ổn định, không bền vững"}, {"w": "rapidly", "pos": "adv", "vi": "nhanh chóng, mau lẹ"}, {"w": "soar", "pos": "v", "vi": "bay vút lên, tăng vọt"}, {"w": "assert", "pos": "v", "vi": "khẳng định, quả quyết, đòi"}, {"w": "analyst", "pos": "n", "vi": "người phân tích, nhà phân tích"}, {"w": "potential", "pos": "adj", "vi": "tiềm năng, có khả năng"}, {"w": "pleased", "pos": "adj", "vi": "hài lòng, vui"}, {"w": "costly", "pos": "adj", "vi": "tốn kém, đắt tiền"}, {"w": "particular", "pos": "adj", "vi": "đặc biệt, đặc thù, chi tiết"}, {"w": "drastic", "pos": "adj", "vi": "mạnh mẽ, quyết liệt"}, {"w": "evenly", "pos": "adv", "vi": "công bằng, đều, ngang bằng nhau"}, {"w": "evidence", "pos": "n", "vi": "bằng chứng, dấu hiệu"}, {"w": "prospect", "pos": "n", "vi": "viễn cảnh, triển vọng"}, {"w": "indicator", "pos": "n", "vi": "chỉ số"}, {"w": "likely", "pos": "adj", "vi": "có khả năng, có thể xảy ra"}, {"w": "director", "pos": "n", "vi": "giám đốc, người chỉ đạo"}, {"w": "substitute", "pos": "n", "vi": "người/vật thay thế"}, {"w": "implication", "pos": "n", "vi": "sự liên quan, sự dính líu, hàm ý"}, {"w": "depression", "pos": "n", "vi": "sự sựt giá, tình trạng đình trệ"}, {"w": "impede", "pos": "v", "vi": "cản trở, ngăn cản"}, {"w": "promising", "pos": "adj", "vi": "đầy hứa hẹn, nhiều triển vọng 1"}, {"w": "adversity", "pos": "n", "vi": "sự bất lợi, nghịch cảnh"}], "10": [{"w": "installment", "pos": "n", "vi": "sự trả góp"}, {"w": "affordable", "pos": "adj", "vi": "(giá cả) phải chăng, có thể chi trả được"}, {"w": "exactly", "pos": "adv", "vi": "chính xác, đúng"}, {"w": "auction", "pos": "n", "vi": "cuộc đấu giá, sự bán đấu giá"}, {"w": "authentic", "pos": "adj", "vi": "thật, đích thực, đáng tin"}, {"w": "charge", "pos": "n", "vi": "tiền phải trả, phí; nhiệm vụ, trách nhiệm"}, {"w": "notice", "pos": "n", "vi": "thông báo, yết thị"}, {"w": "experienced", "pos": "adj", "vi": "có kinh nghiệm, lão luyện"}, {"w": "instruction", "pos": "n", "vi": "lời chỉ dẫn, hướng dẫn"}, {"w": "expert", "pos": "n", "vi": "chuyên gia"}, {"w": "warranty", "pos": "n", "vi": "giấy bảo hành, sự bảo hành"}, {"w": "refund", "pos": "n", "vi": "sự hoàn tiền, sự hoàn trả lại"}, {"w": "subscriber", "pos": "n", "vi": "người đăng ký, người theo dõi, người đặt mua dài hạn"}, {"w": "receipt", "pos": "n", "vi": "biên lai"}, {"w": "carefully", "pos": "adv", "vi": "một cách cẩn thận, thận trọng"}, {"w": "benefit", "pos": "n", "vi": "lợi ích, tác dụng, ưu đãi"}, {"w": "exclusively", "pos": "adv", "vi": "riêng, dành riêng"}, {"w": "description", "pos": "n", "vi": "sự miêu tả, sự mô tả"}, {"w": "relatively", "pos": "adv", "vi": "có liên quan, tương đối, vừa phải"}, {"w": "area", "pos": "n", "vi": "khu vực, vùng, lĩnh vực"}, {"w": "mutually", "pos": "adv", "vi": "với nhau, lẫn nhau, qua lại"}, {"w": "desire", "pos": "n", "vi": "niềm mong muốn, khát khao"}, {"w": "fabric", "pos": "n", "vi": "vải"}], "11": [{"w": "research", "pos": "n", "vi": "sự nghiên cứu, điều tra"}, {"w": "devise", "pos": "v", "vi": "phát minh, chế tạo"}, {"w": "innovative", "pos": "adj", "vi": "tân tiến, đổi mới"}, {"w": "feature", "pos": "n", "vi": "đặc điểm, tính năng"}, {"w": "inspiration", "pos": "n", "vi": "cảm hứng, nguồn cảm hứng"}, {"w": "patent", "pos": "n", "vi": "bằng sáng chế, giấy đăng ký"}, {"w": "envision", "pos": "v", "vi": "hình dung, mường tượng"}, {"w": "extend", "pos": "v", "vi": "mở rộng, kéo dài, gia hạn, giơ ra, tỏ ra"}, {"w": "following", "pos": "prep", "vi": "sau, tiếp theo"}, {"w": "intend", "pos": "v", "vi": "định, có ý định"}, {"w": "grant", "pos": "v", "vi": "ban, cấp, thừa nhận, công nhận"}, {"w": "allow", "pos": "v", "vi": "cho phép, phê duyệt, chấp thuận"}, {"w": "inspect", "pos": "v", "vi": ". kiểm tra, thanh tra"}, {"w": "improve", "pos": "v", "vi": "cải thiện, cải tiến, nâng cấp"}, {"w": "various", "pos": "adj", "vi": "nhiều, đa dạng, khác nhau"}, {"w": "manual", "pos": "n", "vi": "sổ tay, sách hướng dẫn"}, {"w": "response", "pos": "n", "vi": "sự phản hồi, câu trả lời, sự hưởng ứng"}, {"w": "appearance", "pos": "n", "vi": "sự xuất hiện, vẻ ngoài, diện mạo"}, {"w": "successful", "pos": "adj", "vi": "thành công, thành đạt"}, {"w": "hold", "pos": "v", "vi": "cầm, giữ, tổ chức"}, {"w": "advance", "pos": "n", "vi": "thành tựu, sự tiến bộ, sự thăng tiến"}, {"w": "reliable", "pos": "adj", "vi": "đáng tin cậy"}, {"w": "quality", "pos": "n", "vi": "chất lượng"}, {"w": "availability", "pos": "n", "vi": "sự có sẵn, có thể mua được, sự có hiệu lực"}, {"w": "update", "pos": "n", "vi": "sự cập nhật, sự nâng cấp"}, {"w": "complicated", "pos": "adj", "vi": "phức tạp, rắc rối"}, {"w": "indication", "pos": "n", "vi": "biểu hiện, dấu hiệu"}, {"w": "manufacturer", "pos": "n", "vi": "nhà sản xuất, chủ xưởng, chủ xí nghiệp"}, {"w": "superior", "pos": "adj", "vi": "cao, cao cấp, tốt hơn"}], "12": [{"w": "equipment", "pos": "n", "vi": "máy móc, trang thiết bị"}, {"w": "specification", "pos": "n", "vi": "chi tiết, đặc điểm, chỉ dẫn/yêu cầu kĩ thuật, sự chỉ rõ"}, {"w": "safety", "pos": "n", "vi": ": sự an loàn, tính an toàn"}, {"w": "capacity", "pos": "n", "vi": "sức chứa, năng lực, tư cách"}, {"w": "assemble", "pos": "v", "vi": "lắp ráp; triệu tập/triệu hồi"}, {"w": "renovate", "pos": "v", "vi": "nâng cấp, cải tạo (nhà cửa, nội thất)"}, {"w": "decision", "pos": "n", "vi": "quyết định"}, {"w": "material", "pos": "n", "vi": "chất liệu, tài liệu, nguyên liệu"}, {"w": "success", "pos": "n", "vi": "sự thành công, thắng lợi"}, {"w": "limit", "pos": "n", "vi": "giới hạn, ranh giới"}, {"w": "component", "pos": "n", "vi": "thành phần, bộ phận"}, {"w": "flexible", "pos": "adj", "vi": "mềm, dẻo; dễ thuyết phục; linh hoạt"}, {"w": "separately", "pos": "adv", "vi": "tách biệt, riêng rẽ, khác nhau"}, {"w": "coming", "pos": "adj", "vi": "sắp tới"}, {"w": "power", "pos": "n", "vi": "sức mạnh, năng lượng/điện"}, {"w": "chemical", "pos": "n", "vi": "chất hóa học"}], "13": [{"w": "complaint", "pos": "n", "vi": "lời than phiền, lời phàn nàn"}, {"w": "argumentative", "pos": "adj", "vi": "thích tranh cãi"}, {"w": "respond", "pos": "v", "vi": "phản ứng, phản hồi, trả lời"}, {"w": "courteous", "pos": "adj", "vi": "lịch sự, nhã nhặn"}, {"w": "satisfaction", "pos": "n", "vi": "sự hài lòng/thỏa mãn"}, {"w": "inconvenience", "pos": "n", "vi": "sự bất lợi, bất tiện"}, {"w": "replace", "pos": "v", "vi": "thay thế, thay chỗ"}, {"w": "certain", "pos": "adj", "vi": "chắc, chắc chắn; nhất định"}, {"w": "critical", "pos": "adj", "vi": "phê bình, chỉ trích; có tính quyết định; nguy cấp"}, {"w": "priority", "pos": "n", "vi": "sự ưu tiên, ưu thế"}, {"w": "defective", "pos": "adj", "vi": "có lỗi, có thiếu sót, nhược điểm"}, {"w": "attitude", "pos": "n", "vi": "thái độ"}, {"w": "inquire", "pos": "v", "vi": "hỏi, điều tra, thẩm vấn"}], "14": [{"w": "international", "pos": "adj", "vi": "quốc lế"}, {"w": "attraction", "pos": "n", "vi": "sự thu hút, điểm tham quan"}, {"w": "exotic", "pos": "adj", "vi": "kỳ lạ, đẹp kỳ lạ"}, {"w": "diverse", "pos": "adj", "vi": "phong phú, đa dạng, nhiều loại"}, {"w": "superb", "pos": "adj", "vi": "nguy nga, tráng lệ, tuyệt vời"}, {"w": "baggage", "pos": "n", "vi": "hành lý"}, {"w": "missing", "pos": "adj", "vi": "bị mất, thất lạc"}, {"w": "process", "pos": "n", "vi": "quá trình, tiến trình"}, {"w": "emergency", "pos": "n", "vi": "trường hợp khẩn cấp"}, {"w": "passenger", "pos": "n", "vi": "hành khách"}, {"w": "outgoing", "pos": "adj", "vi": "sắp đi (khởi hành); sắp nghỉ việc"}, {"w": "tour", "pos": "n", "vi": "chuyến du lịch, chuyến tham quan"}, {"w": "customarily", "pos": "adv", "vi": "thông thường, theo lẽ thường"}, {"w": "brochure", "pos": "n", "vi": "cuốn sách mỏng, tờ gấp (để quảng cáo)"}, {"w": "unavailable", "pos": "adj", "vi": "không có sẵn, chưa xong, chưa sẵn sàng"}, {"w": "away", "pos": "adv", "vi": "xa, cách xa, mất đi"}, {"w": "dramatic", "pos": "adj", "vi": "kịch tính, gây xúc động; đột ngột, ấn tượng"}], "15": [{"w": "proposal", "pos": "n", "vi": "sự đề xuất, lời đề nghị"}, {"w": "alliance", "pos": "n", "vi": "sự liên minh, khối liên minh"}, {"w": "stipulation", "pos": "n", "vi": "sự quy định, điều khoản quy định"}, {"w": "compromise", "pos": "n", "vi": "sự thỏa hiệp"}, {"w": "negotiation", "pos": "n", "vi": "sự đàm phán, sự thương lượng"}, {"w": "agreement", "pos": "n", "vi": "sự đồng ý; hợp đồng, thỏa thuận"}, {"w": "deadlock", "pos": "n", "vi": "sự bế tắc, sự đình trệ"}, {"w": "contract", "pos": "n", "vi": "hợp đồng"}, {"w": "signature", "pos": "n", "vi": "chữ ký"}, {"w": "originally", "pos": "adv", "vi": "ban đầu, khởi đầu"}, {"w": "initially", "pos": "adv", "vi": "lúc đầu, ban đầu"}, {"w": "expire", "pos": "v", "vi": "hết hạn, hết hiệu lực"}, {"w": "revised", "pos": "adj", "vi": "đã được hiệu dính, đã được duyệt lại"}, {"w": "imperative", "pos": "adj", "vi": "bắt buộc, rất quan trọng, khẩn cấp"}, {"w": "objection", "pos": "n", "vi": "sự phản đối, sự bất bình"}, {"w": "impression", "pos": "n", "vi": "ấn tượng"}, {"w": "bid", "pos": "n", "vi": "sự đặt giá, sự bỏ thầu"}, {"w": "foundation", "pos": "n", "vi": "nền tảng, sự thành lập"}], "16": [{"w": "temporarily", "pos": "adv", "vi": "tạm thời, nhất thời"}, {"w": "dealer", "pos": "n", "vi": "người buôn bán, lái buôn"}, {"w": "bulk", "pos": "adj", "vi": "lớn, nhiều"}, {"w": "inventory", "pos": "n", "vi": "hàng tồn kho"}, {"w": "short", "pos": "adj", "vi": "ngắn; thiếu, không đủ"}, {"w": "cost", "pos": "n", "vi": "giá, chi phí"}, {"w": "selection", "pos": "n", "vi": "sự chọn lựa, lựa chọn"}, {"w": "commercial", "pos": "adj", "vi": "(thuộc) thương mại"}, {"w": "move", "pos": "v", "vi": "chuyển động, di chuyển"}, {"w": "supply", "pos": "v", "vi": "cung cấp, trang bị"}, {"w": "discount", "pos": "n", "vi": "sự giảm, tiền chiết khấu"}, {"w": "distribute", "pos": "v", "vi": "phân phối, phân phát"}, {"w": "acquisition", "pos": "n", "vi": "sự tiếp nhận, sự mua lại; vật được mua"}, {"w": "subject", "pos": "adj", "vi": "dễ bị, khó tránh khỏi; lệ thuộc, tùy theo, phải chịu"}, {"w": "unable", "pos": "adj", "vi": "không thể, không có khả năng"}, {"w": "bargain", "pos": "n", "vi": "sự mặc cả, món hời"}, {"w": "acclaim", "pos": "n", "vi": "tiếng hoan hô, sự ngợi khen"}, {"w": "market", "pos": "n", "vi": "thị trường"}, {"w": "retail", "pos": "n", "vi": "sự bán lẻ, việc bán lẻ"}], "17": [{"w": "fragile", "pos": "adj", "vi": "dễ vỡ, mỏng manh"}, {"w": "perishable", "pos": "adj", "vi": "dễ hỏng, dễ thối"}, {"w": "courier", "pos": "n", "vi": "người đưa thư, công ty vận chuyển"}, {"w": "carton", "pos": "n", "vi": "giấy bìa, hộp/thùng bìa cứng"}, {"w": "address", "pos": "n", "vi": "địa chỉ"}, {"w": "particularly", "pos": "adv", "vi": "đặc biệt, cá biệt, đặc biệt là"}, {"w": "adequately", "pos": "adv", "vi": "tương xứng, thích đáng"}, {"w": "article", "pos": "n", "vi": "vật phẩm, đồ; bài báo, điều khoản"}, {"w": "enclose", "pos": "v", "vi": "bao gồm, gửi kèm theo; vây quanh"}, {"w": "careful", "pos": "adj", "vi": "cẩn thận, kỹ lưỡng, chu đáo"}, {"w": "formerly", "pos": "adv", "vi": "trước đây 16"}, {"w": "react", "pos": "v", "vi": "phản ứng, tác động trở lại"}, {"w": "content", "pos": "n", "vi": "nội dung, đồ đựng bên trong"}, {"w": "convenience", "pos": "n", "vi": "sự tiện lợi/thuận tiện"}, {"w": "caution", "pos": "n", "vi": "sự cẩn trọng, lời cảnh cáo"}, {"w": "remarkable", "pos": "adj", "vi": "đáng chú ý, xuất sắc, đặc biệt"}, {"w": "warehouse", "pos": "n", "vi": "nhà kho"}, {"w": "storage", "pos": "n", "vi": "kho, sự tích trữ"}, {"w": "exclusion", "pos": "n", "vi": "sự không tính vào, sự loại trừ"}, {"w": "incorrect", "pos": "adj", "vi": "không đúng, sai"}]}};
+const $ = id => document.getElementById(id);
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+    r = Math.min(r, w / 2, h / 2);
+    this.moveTo(x + r, y); this.arcTo(x + w, y, x + w, y + h, r);
+    this.arcTo(x + w, y + h, x, y + h, r); this.arcTo(x, y + h, x, y, r);
+    this.arcTo(x, y, x + w, y, r); this.closePath(); return this;
+  };
+}
+let selTopic = 'all', selMode = 'easy', soundOn = true;
+
+// ---------- menu ----------
+const grid = $('topicGrid');
+const allBtn = document.createElement('button');
+allBtn.className = 'topic all sel';
+allBtn.innerHTML = '🌌 Trộn tất cả 17 chủ đề<small>328 từ — chơi lâu, ôn tổng hợp</small>';
+allBtn.onclick = () => { selTopic = 'all'; paintTopics(); };
+grid.appendChild(allBtn);
+Object.keys(DATA.topics).forEach(k => {
+  const b = document.createElement('button');
+  b.className = 'topic'; b.dataset.t = k;
+  b.innerHTML = 'Day ' + k + '. ' + DATA.topics[k] + '<small>' + DATA.days[k].length + ' từ</small>';
+  b.onclick = () => { selTopic = k; paintTopics(); };
+  grid.appendChild(b);
+});
+function paintTopics() {
+  document.querySelectorAll('.topic').forEach(el => {
+    el.classList.toggle('sel', (el.dataset.t || 'all') === String(selTopic));
+  });
+}
+$('modeEasy').onclick = () => { selMode = 'easy'; $('modeEasy').classList.add('sel'); $('modeHard').classList.remove('sel'); };
+$('modeHard').onclick = () => { selMode = 'hard'; $('modeHard').classList.add('sel'); $('modeEasy').classList.remove('sel'); };
+
+// ---------- audio ----------
+let AC = null;
+function ac() { if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } return AC; }
+function zap() {
+  if (!soundOn) return; const c = ac(); if (!c) return;
+  const o = c.createOscillator(), g = c.createGain();
+  o.type = 'square'; o.frequency.setValueAtTime(880, c.currentTime);
+  o.frequency.exponentialRampToValueAtTime(220, c.currentTime + 0.12);
+  g.gain.setValueAtTime(0.08, c.currentTime); g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.14);
+  o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime + 0.15);
+}
+function boom() {
+  if (!soundOn) return; const c = ac(); if (!c) return;
+  const len = c.sampleRate * 0.25, buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+  const s = c.createBufferSource(), g = c.createGain(); s.buffer = buf;
+  g.gain.setValueAtTime(0.15, c.currentTime); g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.25);
+  s.connect(g); g.connect(c.destination); s.start();
+}
+function speak(word) {
+  if (!soundOn || !('speechSynthesis' in window)) return;
+  try {
+    const u = new SpeechSynthesisUtterance(word);
+    u.lang = 'en-US'; u.rate = 0.9;
+    if (musicMode === 'file') bgm.volume = 0.12;
+    u.onend = () => { if (musicMode === 'file') bgm.volume = 0.35; };
+    u.onerror = () => { if (musicMode === 'file') bgm.volume = 0.35; };
+    speechSynthesis.speak(u);
+  } catch (e) {}
+}
+
+// ---------- background music ----------
+// Tries the real track (music file next to this HTML, used on GitHub/Netlify);
+// if it cannot load (single file opened alone), falls back to a soft synth loop.
+let musicOn = true, musicMode = null, synthTimer = null, synthStep = 0, synthTried = false;
+const bgm = new Audio();
+bgm.loop = true; bgm.volume = 0.35; bgm.preload = 'auto';
+bgm.src = 'music-monkeys-spinning-monkeys.mp3';
+bgm.addEventListener('error', () => { if (musicOn && musicMode !== 'synth') startSynth(); });
+function tone(freq, t0, dur, type, vol) {
+  const c = ac(); if (!c) return;
+  const o = c.createOscillator(), g = c.createGain();
+  o.type = type; o.frequency.value = freq;
+  g.gain.setValueAtTime(vol, t0); g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+  o.connect(g); g.connect(c.destination); o.start(t0); o.stop(t0 + dur + 0.05);
+}
+function startSynth() {
+  if (synthTimer) return;
+  musicMode = 'synth';
+  const mel = [523.25, 659.25, 783.99, 880.00, 783.99, 659.25, 587.33, 659.25];
+  const bass = [130.81, 98.00, 110.00, 98.00];
+  synthStep = 0;
+  synthTimer = setInterval(() => {
+    if (!musicOn) return;
+    const c = ac(); if (!c) return;
+    const t = c.currentTime + 0.05;
+    tone(mel[synthStep % 8], t, 0.22, 'triangle', 0.05);
+    if (synthStep % 2 === 0) tone(bass[(synthStep / 2) % 4], t, 0.3, 'sine', 0.07);
+    synthStep++;
+  }, 240);
+}
+function stopMusic() {
+  try { bgm.pause(); } catch (e) {}
+  if (synthTimer) { clearInterval(synthTimer); synthTimer = null; }
+  musicMode = null;
+}
+function startMusic() {
+  if (!musicOn) return;
+  stopMusic();
+  const p = bgm.play();
+  if (p && p.then) {
+    p.then(() => { musicMode = 'file'; }).catch(() => { if (musicOn && musicMode !== 'synth') startSynth(); });
+  } else {
+    musicMode = 'file';
+  }
+}
+
+// ---------- game ----------
+const cv = $('cv'), ctx = cv.getContext('2d');
+let W = 520, H = 620, DPR = 1;
+function resize() {
+  // Measure the always-visible .wrap — NEVER the game screen, which is hidden
+  // until play starts (measuring a hidden element returns 0 and makes the
+  // canvas 0x0, i.e. invisible game). Fall back to 520 if measurement fails.
+  const wrap = document.querySelector('.wrap');
+  const st = getComputedStyle(wrap);
+  let cw = Math.round(wrap.clientWidth - parseFloat(st.paddingLeft) - parseFloat(st.paddingRight));
+  if (!cw || cw < 280) cw = 520;
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  W = cw; H = Math.round(cw * 1.19);
+  cv.style.width = cw + 'px';
+  cv.style.height = H + 'px';
+  cv.width = W * DPR; cv.height = H * DPR;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+}
+window.addEventListener('resize', resize);
+
+let G = null;
+function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function wordList() {
+  if (selTopic === 'all') {
+    let all = [];
+    Object.values(DATA.days).forEach(ws => all.push(...ws));
+    return shuffle(all.slice());
+  }
+  return shuffle(DATA.days[String(selTopic)].slice());
+}
+function startGame(list) {
+  $('menuScreen').style.display = 'none';
+  $('resultScreen').style.display = 'none';
+  $('gameScreen').style.display = 'block';
+  resize();
+  if ('speechSynthesis' in window) speechSynthesis.cancel();
+  listening = false;
+  G = {
+    list: list, queue: list.slice(), enemies: [], parts: [], beams: [],
+    buffer: '', target: null, score: 0, combo: 0, bestCombo: 0,
+    kills: 0, lives: 3, typedOk: 0, typedAll: 0, missed: [],
+    spawnT: 0, last: performance.now(), over: false, stars: []
+  };
+  for (let i = 0; i < 110; i++) G.stars.push({ x: Math.random() * W, y: Math.random() * H, r: Math.random() * 1.8 + 0.6, tw: Math.random() * Math.PI * 2 });
+  $('total').textContent = list.length;
+  $('typebox').value = '';
+  prevVal = '';
+  setTimeout(() => $('typebox').focus(), 50);
+  requestAnimationFrame(loop);
+}
+function level() { return Math.floor(G.kills / 8) + 1; }
+function speed() { return 30 + (level() - 1) * 7; }
+function spawnGap() { return Math.max(950, 2300 - (level() - 1) * 180); }
+const COLORS = ['#4ade80', '#f472b6', '#ffd84d', '#7fd4ff', '#c084fc'];
+function spawn() {
+  if (!G.queue.length) return;
+  const w = G.queue.shift();
+  // Pick a base x well away from live enemies so labels cannot stack on
+  // top of each other (best effort over 14 tries).
+  let bestX = W / 2, bestD = -1;
+  for (let t = 0; t < 14; t++) {
+    const cand = 60 + Math.random() * Math.max(W - 120, 40);
+    const d = G.enemies.length ? Math.min(...G.enemies.map(e => Math.abs(e.bx - cand))) : 9999;
+    if (d > bestD) { bestD = d; bestX = cand; }
+    if (d >= 210) break;
+  }
+  const v0 = speed() * (0.85 + Math.random() * 0.3);
+  G.enemies.push({ w: w, bx: bestX, x: bestX, y: -30, vy: v0, vy0: v0,
+    phase: Math.random() * Math.PI * 2, amp: 6 + Math.random() * 10,
+    freq: 0.7 + Math.random() * 0.7,
+    color: COLORS[Math.floor(Math.random() * COLORS.length)], born: performance.now() });
+}
+function pickTarget() {
+  let best = null;
+  for (const e of G.enemies) if (!best || e.y > best.y) best = e;
+  return best;
+}
+function labelOf(e) {
+  if (selMode === 'easy') return e.w.w;
+  return e.w.vi;
+}
+function subOf(e) {
+  if (selMode === 'easy') return e.w.vi;
+  return '• '.repeat(e.w.w.length).trim();
+}
+function drawUFO(e) {
+  const y = e.y;
+  // Fade in on spawn + gentle tilt while swaying, so entry and fall feel soft.
+  const fade = Math.min(Math.max((performance.now() - e.born) / 400, 0.15), 1);
+  const tilt = Math.cos(performance.now() / 1000 * e.freq + e.phase) * 0.07;
+  ctx.save();
+  ctx.globalAlpha = fade;
+  ctx.translate(e.x, y);
+  ctx.rotate(tilt);
+  ctx.fillStyle = e.color + '33';
+  ctx.beginPath(); ctx.ellipse(0, 8, 46, 12, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#e8ecff';
+  ctx.beginPath(); ctx.ellipse(0, 0, 30, 10, 0, Math.PI, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = e.color;
+  ctx.beginPath(); ctx.ellipse(0, 4, 44, 12, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#fff';
+  [-24, 0, 24].forEach(dx => { ctx.beginPath(); ctx.arc(dx, 5, 3.5, 0, Math.PI * 2); ctx.fill(); });
+  ctx.restore();
+  // label pill (meaning truncated so neighbouring pills cannot overlap badly)
+  const main = labelOf(e);
+  let sub = subOf(e);
+  if (sub.length > 24) sub = sub.slice(0, 24) + '…';
+  ctx.font = 'bold 23px Arial';
+  const w1 = ctx.measureText(main).width;
+  ctx.font = '15px Arial';
+  const w2 = ctx.measureText(sub).width;
+  const bw = Math.max(w1, w2) + 24, bh = 54;
+  // clamp the pill inside the canvas so edge enemies never get cut-off text
+  const px = Math.max(bw / 2 + 4, Math.min(W - bw / 2 - 4, e.x));
+  const bx = px - bw / 2, by = y - 66;
+  ctx.fillStyle = 'rgba(4,8,24,0.93)';
+  ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, 10); ctx.fill();
+  if (G.target === e) { ctx.strokeStyle = '#ffd84d'; ctx.lineWidth = 2.5; ctx.stroke(); }
+  ctx.textAlign = 'center';
+  if (selMode === 'easy' && G.target === e && G.buffer) {
+    const done = G.buffer, rest = main.slice(G.buffer.length);
+    ctx.font = 'bold 23px Arial';
+    const dw = ctx.measureText(done).width, rw = ctx.measureText(rest).width;
+    const sx = px - (dw + rw) / 2;
+    ctx.fillStyle = '#4ade80'; ctx.fillText(done, sx + dw / 2, by + 24);
+    ctx.fillStyle = '#fff'; ctx.fillText(rest, sx + dw + rw / 2, by + 24);
+  } else {
+    ctx.font = 'bold 23px Arial'; ctx.fillStyle = '#fff';
+    ctx.fillText(main, px, by + 24);
+  }
+  ctx.font = '15px Arial'; ctx.fillStyle = '#d5def7';
+  ctx.fillText(sub, px, by + 45);
+  ctx.textAlign = 'left';
+}
+function drawShip() {
+  const x = W / 2, y = H - 42;
+  ctx.save(); ctx.translate(x, y);
+  const fl = 10 + Math.sin(performance.now() / 90) * 4;
+  ctx.fillStyle = '#ff9a3d';
+  ctx.beginPath(); ctx.moveTo(-7, 14); ctx.lineTo(0, 14 + fl); ctx.lineTo(7, 14); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#7fd4ff';
+  ctx.beginPath(); ctx.moveTo(0, -22); ctx.lineTo(15, 14); ctx.lineTo(-15, 14); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#ffd84d';
+  ctx.beginPath(); ctx.arc(0, 2, 6, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+function loop(now) {
+  if (!G || G.over) return;
+  const dt = Math.min((now - G.last) / 1000, 0.05); G.last = now;
+  // spawn
+  G.spawnT += dt * 1000;
+  const maxConc = level() >= 3 ? 4 : 3;
+  if (G.spawnT > spawnGap() && G.enemies.length < maxConc && G.queue.length) { spawn(); G.spawnT = 0; }
+  // move: gentle acceleration + sine sway so the fall looks fluid, not rigid
+  for (const e of G.enemies) {
+    e.vy = Math.min(e.vy * (1 + 0.02 * dt), e.vy0 * 1.25);
+    e.y += e.vy * dt;
+    e.x = e.bx + Math.sin(now / 1000 * e.freq + e.phase) * e.amp;
+  }
+  // reached bottom
+  for (let i = G.enemies.length - 1; i >= 0; i--) {
+    const e = G.enemies[i];
+    if (e.y > H - 60) {
+      G.enemies.splice(i, 1);
+      if (G.target === e) { G.target = null; G.buffer = ''; $('typebox').value = ''; }
+      G.lives--; G.combo = 0; boom(); speak(e.w.w);
+      for (let k = 0; k < 14; k++) {
+        const a = Math.random() * Math.PI * 2, v = 30 + Math.random() * 80;
+        G.parts.push({ x: e.x, y: e.y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 0.5, c: '#9aa7c7' });
+      }
+      G.missed.push(e.w);
+      toast('Rơi mất: ' + e.w.w + ' = ' + e.w.vi, true);
+      updateHUD();
+      if (G.lives <= 0) return endGame(false);
+    }
+  }
+  // beams & particles decay
+  G.beams = G.beams.filter(b => now - b.t < 160);
+  for (const p of G.parts) { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 60 * dt; p.life -= dt; }
+  G.parts = G.parts.filter(p => p.life > 0);
+  // draw
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#fff';
+  for (const s of G.stars) {
+    ctx.globalAlpha = 0.55 + 0.45 * Math.abs(Math.sin(now / 700 + s.tw));
+    ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  drawShip();
+  for (const e of G.enemies) drawUFO(e);
+  for (const b of G.beams) {
+    ctx.strokeStyle = '#ffd84d'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(W / 2, H - 46); ctx.lineTo(b.x, b.y); ctx.stroke();
+  }
+  for (const p of G.parts) {
+    ctx.globalAlpha = Math.max(p.life / 0.6, 0);
+    ctx.fillStyle = p.c;
+    ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  // win?
+  if (!G.queue.length && !G.enemies.length) return endGame(true);
+  requestAnimationFrame(loop);
+}
+function updateHUD() {
+  $('score').textContent = G.score;
+  $('combo').textContent = G.combo;
+  $('lives').textContent = '♥'.repeat(Math.max(G.lives, 0)) + '♡'.repeat(Math.max(3 - G.lives, 0));
+  $('kills').textContent = G.kills;
+  $('prog').style.width = (G.list.length ? (G.kills / G.list.length) * 100 : 0) + '%';
+}
+let toastT = null;
+function toast(msg, bad) {
+  const t = $('toast');
+  t.textContent = msg; t.style.color = bad ? '#ff8fa3' : '#7fd4ff';
+  clearTimeout(toastT);
+  toastT = setTimeout(() => t.textContent = '', 2600);
+}
+function kill(e) {
+  G.beams.push({ x: e.x, y: e.y, t: performance.now() });
+  for (let i = 0; i < 22; i++) {
+    const a = Math.random() * Math.PI * 2, v = 40 + Math.random() * 130;
+    G.parts.push({ x: e.x, y: e.y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 30, life: 0.6, c: e.color });
+  }
+  zap(); speak(e.w.w);
+  G.score += 10 + G.combo;
+  G.combo++; G.bestCombo = Math.max(G.bestCombo, G.combo);
+  G.kills++;
+  toast(e.w.w + ' = ' + e.w.vi);
+  G.enemies = G.enemies.filter(x => x !== e);
+  G.target = null; G.buffer = ''; $('typebox').value = '';
+  updateHUD();
+}
+function onKey(ch) {
+  if (!G || G.over) return;
+  if (!/^[a-z\-']$/.test(ch)) return;
+  G.typedAll++;
+  if (!G.target) G.target = pickTarget();
+  if (!G.target) return;
+  const word = G.target.w.w;
+  const next = word[G.buffer.length];
+  if (ch === next) {
+    G.buffer += ch; G.typedOk++;
+    if (G.buffer === word) kill(G.target);
+  } else {
+    // try another enemy whose word starts with buffer+ch
+    const nb = G.buffer + ch;
+    const alt = G.enemies.find(e => e !== G.target && e.w.w.startsWith(nb));
+    if (alt) { G.target = alt; G.buffer = nb; G.typedOk++; if (nb === alt.w.w) kill(alt); }
+    else { G.buffer = ''; $('typebox').value = ''; }
+  }
+  $('typebox').value = G.buffer;
+}
+let prevVal = '';
+$('typebox').addEventListener('input', ev => {
+  if (!G || G.over) { ev.target.value = ''; prevVal = ''; return; }
+  const v = ev.target.value.toLowerCase();
+  if (v.length < prevVal.length) {
+    G.buffer = G.buffer.slice(0, -1);
+  } else {
+    // feed every newly added char (typing letter by letter, or a pasted word)
+    const seq = v.startsWith(G.buffer) ? v.slice(prevVal.length) : v;
+    for (const ch of seq) { if (G.over) break; onKey(ch); }
+  }
+  prevVal = G.buffer;
+  ev.target.value = G.buffer;
+});
+$('typebox').addEventListener('keydown', ev => {
+  if (ev.key === ' ') ev.preventDefault();
+});
+$('hintBtn').onclick = () => {
+  if (!G || G.over) return;
+  if (!G.target) G.target = pickTarget();
+  if (!G.target) return;
+  const w = G.target.w.w;
+  if (G.buffer.length === 0) { G.buffer = w[0]; $('typebox').value = G.buffer; }
+  $('typebox').focus();
+};
+$('soundBtn').onclick = () => {
+  soundOn = !soundOn;
+  $('soundBtn').textContent = soundOn ? '🔊 Âm thanh: Bật' : '🔇 Âm thanh: Tắt';
+};
+$('musicBtn').onclick = () => {
+  musicOn = !musicOn;
+  $('musicBtn').textContent = musicOn ? '🎵 Nhạc nền: Bật' : '🎵 Nhạc nền: Tắt';
+  if (musicOn) startMusic(); else stopMusic();
+};
+$('quitBtn').onclick = () => { if (G) endGame(false, true); };
+$('startBtn').onclick = () => {
+  ac();
+  if ('speechSynthesis' in window) {
+    speechSynthesis.getVoices();
+    if (speechSynthesis.paused) speechSynthesis.resume();
+  }
+  startMusic();
+  startGame(wordList());
+};
+let listening = false;
+$('listenMissBtn').onclick = () => {
+  if (listening) {
+    try { speechSynthesis.cancel(); } catch (e) {}
+    listening = false;
+    $('listenMissBtn').textContent = '🔊 Nghe lại các từ đã rơi';
+    return;
+  }
+  const m = G ? G.missed : [];
+  if (!m.length || !('speechSynthesis' in window)) return;
+  listening = true;
+  $('listenMissBtn').textContent = '⏹ Dừng đọc';
+  let i = 0;
+  const next = () => {
+    if (!listening || i >= m.length) {
+      listening = false;
+      $('listenMissBtn').textContent = '🔊 Nghe lại các từ đã rơi';
+      return;
+    }
+    const u = new SpeechSynthesisUtterance(m[i].w);
+    u.lang = 'en-US'; u.rate = 0.9;
+    u.onend = () => { i++; setTimeout(next, 300); };
+    u.onerror = () => { i++; setTimeout(next, 300); };
+    speechSynthesis.speak(u);
+  };
+  next();
+};
+$('againBtn').onclick = () => startGame(wordList());
+$('reviewBtn').onclick = () => {
+  const m = G ? G.missed : [];
+  if (!m.length) { toast('Không có từ nào bị rơi, khỏi cần ôn!'); return; }
+  startGame(shuffle(m.slice()));
+};
+$('menuBtn').onclick = () => {
+  $('resultScreen').style.display = 'none';
+  $('menuScreen').style.display = 'block';
+  window.scrollTo(0, 0);
+};
+function endGame(win, quit) {
+  if (!G) return;
+  G.over = true;
+  const acc = G.typedAll ? Math.round(G.typedOk / G.typedAll * 100) : 100;
+  $('resultTitle').textContent = quit ? '🏳️ Đã dừng chơi' : (win ? '🎉 Thắng rồi!' : '💥 Hết mạng!');
+  $('resultSub').textContent = quit ? 'Chơi lại bất cứ lúc nào nhé.'
+    : (win ? 'Em đã bắn hạ hết ' + G.list.length + ' từ của chủ đề này. Giỏi quá!'
+           : 'Đừng nản, ôn lại từ đã rơi rồi chơi lại là nhớ ngay.');
+  $('rScore').textContent = G.score;
+  $('rKills').textContent = G.kills + '/' + G.list.length;
+  $('rAcc').textContent = acc + '%';
+  $('rCombo').textContent = G.bestCombo;
+  const miss = G.missed;
+  $('rMiss').innerHTML = miss.length
+    ? miss.map(w => '<b>' + w.w + '</b> = ' + w.vi + ' <span style="color:#7c8db5">(' + w.pos + ')</span>').join('<br>')
+    : 'Không có từ nào bị rơi. Tuyệt vời!';
+  $('reviewBtn').style.display = miss.length ? 'block' : 'none';
+  $('listenMissBtn').style.display = miss.length ? 'block' : 'none';
+  $('listenMissBtn').textContent = '🔊 Nghe lại các từ đã rơi';
+  $('gameScreen').style.display = 'none';
+  $('resultScreen').style.display = 'block';
+  window.scrollTo(0, 0);
+}
+resize();
+</script>
+</body>
+</html>
