@@ -18,6 +18,7 @@
   .topic.sel{border-color:#ffd84d;background:#2a2450;box-shadow:0 0 0 2px #ffd84d55}
   .topic.all{grid-column:1/-1;text-align:center}
   .modes{display:flex;gap:8px}
+  .adline{font-size:14px;color:#ffd84d;text-align:center;margin-top:2px}
   .mode{flex:1;border:1px solid #46619f;background:#22356e;color:#fff;border-radius:12px;padding:10px;font-size:14px;cursor:pointer}
   .mode small{display:block;color:#c3d0f2;font-size:12px;margin-top:2px}
   .mode.sel{border-color:#4ade80;background:#12351f;box-shadow:0 0 0 2px #4ade8055}
@@ -51,6 +52,7 @@
 <div class="wrap">
   <div id="menuScreen">
     <h1>🚀 TOEIC SPACE TYPER</h1>
+    <div class="adline">ORI TOEIC - tiếng Anh từ mất gốc ✈️</div>
     <p class="sub">Gõ chữ để bắn máy bay — học từ vựng Hacker TOEIC theo chủ đề</p>
     <div class="ori"><b>✈️ ORI ACADEMY</b></div>
     <div class="card">
@@ -60,8 +62,8 @@
     <div class="card">
       <h2>2. Chọn cách chơi</h2>
       <div class="modes">
-        <button class="mode sel" id="modeEasy">🌟 Dễ — Luyện gõ<small>Địch hiện từ tiếng Anh + nghĩa, em gõ theo</small></button>
-        <button class="mode" id="modeHard">🔥 Khó — Nhớ từ thật<small>Địch chỉ hiện nghĩa tiếng Việt, em tự nhớ từ</small></button>
+        <button class="mode sel" id="modeBi">🔤 Song ngữ — Hiện cả Anh + Việt<small>Địch hiện từ tiếng Anh + nghĩa, em gõ theo</small></button>
+        <button class="mode" id="modeVi">🇻🇳 Việt → Anh — Hiện nghĩa, tự nhớ từ<small>Địch chỉ hiện nghĩa tiếng Việt, em gõ từ tiếng Anh</small></button>
       </div>
     </div>
     <div class="card how">
@@ -96,6 +98,7 @@
       <button class="smallbtn" id="hintBtn">💡 Gợi ý</button>
       <button class="smallbtn" id="soundBtn">🔊 Âm thanh: Bật</button>
       <button class="smallbtn" id="musicBtn">🎵 Nhạc nền: Bật</button>
+      <button class="smallbtn" id="modeBtn">🔄 Chế độ: Song ngữ</button>
       <button class="smallbtn" id="quitBtn">🏳️ Dừng chơi</button>
     </div>
     <div id="toast"></div>
@@ -111,6 +114,11 @@
       <div class="stat"><span>Độ chính xác gõ</span><b id="rAcc"></b></div>
       <div class="stat"><span>Combo cao nhất</span><b id="rCombo"></b></div>
     </div>
+    <div class="row">
+      <button class="smallbtn" id="saveImgBtn">📸 Lưu ảnh thành tựu</button>
+      <button class="smallbtn" id="shareBtn">📤 Chia sẻ thành tựu</button>
+    </div>
+    <p class="sub" id="shareMsg" style="min-height:18px"></p>
     <div class="card">
       <h2>📝 Từ cần ôn lại</h2>
       <div class="miss" id="rMiss"></div>
@@ -142,7 +150,7 @@ if (!CanvasRenderingContext2D.prototype.roundRect) {
     this.arcTo(x, y, x + w, y, r); this.closePath(); return this;
   };
 }
-let selTopic = 'all', selMode = 'easy', soundOn = true;
+let selTopic = 'all', selMode = 'bi', soundOn = true;
 
 // ---------- menu ----------
 const grid = $('topicGrid');
@@ -163,8 +171,14 @@ function paintTopics() {
     el.classList.toggle('sel', (el.dataset.t || 'all') === String(selTopic));
   });
 }
-$('modeEasy').onclick = () => { selMode = 'easy'; $('modeEasy').classList.add('sel'); $('modeHard').classList.remove('sel'); };
-$('modeHard').onclick = () => { selMode = 'hard'; $('modeHard').classList.add('sel'); $('modeEasy').classList.remove('sel'); };
+function syncModeUI() {
+  $('modeBi').classList.toggle('sel', selMode === 'bi');
+  $('modeVi').classList.toggle('sel', selMode === 'vi');
+  $('modeBtn').textContent = selMode === 'bi' ? '🔄 Chế độ: Song ngữ' : '🔄 Chế độ: Việt → Anh';
+}
+$('modeBi').onclick = () => { selMode = 'bi'; syncModeUI(); };
+$('modeVi').onclick = () => { selMode = 'vi'; syncModeUI(); };
+$('modeBtn').onclick = () => { selMode = selMode === 'bi' ? 'vi' : 'bi'; syncModeUI(); };
 
 // ---------- audio ----------
 let AC = null;
@@ -273,7 +287,7 @@ function wordList() {
   }
   return shuffle(DATA.days[String(selTopic)].slice());
 }
-function startGame(list) {
+function startGame(list, topic) {
   $('menuScreen').style.display = 'none';
   $('resultScreen').style.display = 'none';
   $('gameScreen').style.display = 'block';
@@ -284,7 +298,8 @@ function startGame(list) {
     list: list, queue: list.slice(), enemies: [], parts: [], beams: [],
     buffer: '', target: null, score: 0, combo: 0, bestCombo: 0,
     kills: 0, lives: 3, typedOk: 0, typedAll: 0, missed: [],
-    spawnT: 0, last: performance.now(), over: false, stars: []
+    spawnT: 0, last: performance.now(), over: false, stars: [],
+    topic: topic || topicLabel()
   };
   for (let i = 0; i < 110; i++) G.stars.push({ x: Math.random() * W, y: Math.random() * H, r: Math.random() * 1.8 + 0.6, tw: Math.random() * Math.PI * 2 });
   $('total').textContent = list.length;
@@ -292,6 +307,9 @@ function startGame(list) {
   prevVal = '';
   setTimeout(() => $('typebox').focus(), 50);
   requestAnimationFrame(loop);
+}
+function topicLabel() {
+  return selTopic === 'all' ? 'Trộn tất cả 17 chủ đề' : 'Day ' + selTopic + '. ' + DATA.topics[selTopic];
 }
 function level() { return Math.floor(G.kills / 8) + 1; }
 function speed() { return 30 + (level() - 1) * 7; }
@@ -321,11 +339,11 @@ function pickTarget() {
   return best;
 }
 function labelOf(e) {
-  if (selMode === 'easy') return e.w.w;
+  if (selMode === 'bi') return e.w.w;
   return e.w.vi;
 }
 function subOf(e) {
-  if (selMode === 'easy') return e.w.vi;
+  if (selMode === 'bi') return e.w.vi;
   return '• '.repeat(e.w.w.length).trim();
 }
 function drawUFO(e) {
@@ -362,13 +380,23 @@ function drawUFO(e) {
   ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, 10); ctx.fill();
   if (G.target === e) { ctx.strokeStyle = '#ffd84d'; ctx.lineWidth = 2.5; ctx.stroke(); }
   ctx.textAlign = 'center';
-  if (selMode === 'easy' && G.target === e && G.buffer) {
-    const done = G.buffer, rest = main.slice(G.buffer.length);
+  if (G.target === e && G.buffer) {
+    const done = G.buffer;
     ctx.font = 'bold 23px Arial';
-    const dw = ctx.measureText(done).width, rw = ctx.measureText(rest).width;
-    const sx = px - (dw + rw) / 2;
-    ctx.fillStyle = '#4ade80'; ctx.fillText(done, sx + dw / 2, by + 24);
-    ctx.fillStyle = '#fff'; ctx.fillText(rest, sx + dw + rw / 2, by + 24);
+    const dw = ctx.measureText(done).width;
+    if (selMode === 'bi') {
+      const rest = main.slice(G.buffer.length);
+      const rw = ctx.measureText(rest).width;
+      const sx = px - (dw + rw) / 2;
+      ctx.fillStyle = '#4ade80'; ctx.fillText(done, sx + dw / 2, by + 24);
+      ctx.fillStyle = '#fff'; ctx.fillText(rest, sx + dw + rw / 2, by + 24);
+    } else {
+      const dots = '•'.repeat(Math.max(main.length - done.length, 0));
+      const rw = ctx.measureText(dots).width;
+      const sx = px - (dw + rw) / 2;
+      ctx.fillStyle = '#4ade80'; ctx.fillText(done, sx + dw / 2, by + 24);
+      ctx.fillStyle = '#d5def7'; ctx.fillText(dots, sx + dw + rw / 2, by + 24);
+    }
   } else {
     ctx.font = 'bold 23px Arial'; ctx.fillStyle = '#fff';
     ctx.fillText(main, px, by + 24);
@@ -571,13 +599,94 @@ $('againBtn').onclick = () => startGame(wordList());
 $('reviewBtn').onclick = () => {
   const m = G ? G.missed : [];
   if (!m.length) { toast('Không có từ nào bị rơi, khỏi cần ôn!'); return; }
-  startGame(shuffle(m.slice()));
+  startGame(shuffle(m.slice()), 'Ôn từ đã rơi');
 };
 $('menuBtn').onclick = () => {
   $('resultScreen').style.display = 'none';
   $('menuScreen').style.display = 'block';
+  syncModeUI();
   window.scrollTo(0, 0);
 };
+// ---------- share achievement ----------
+let LAST = null;
+function achievementCanvas() {
+  const c = document.createElement('canvas');
+  c.width = 1080; c.height = 1080;
+  const x = c.getContext('2d');
+  const g = x.createLinearGradient(0, 0, 0, 1080);
+  g.addColorStop(0, '#0a1430'); g.addColorStop(1, '#1b2c60');
+  x.fillStyle = g; x.fillRect(0, 0, 1080, 1080);
+  x.fillStyle = '#ffffff';
+  for (let i = 0; i < 90; i++) {
+    x.beginPath(); x.arc(Math.random() * 1080, Math.random() * 1080, Math.random() * 2 + 0.8, 0, Math.PI * 2); x.fill();
+  }
+  x.strokeStyle = '#ffd84d'; x.lineWidth = 10;
+  x.strokeRect(40, 40, 1000, 1000);
+  x.textAlign = 'center';
+  x.fillStyle = '#ffd84d'; x.font = 'bold 72px Arial';
+  x.fillText('🚀 TOEIC SPACE TYPER', 540, 170);
+  x.fillStyle = '#ffffff'; x.font = 'bold 44px Arial';
+  x.fillText('THÀNH TÍCH HỌC TỪ VỰNG', 540, 240);
+  x.fillStyle = '#ffd84d'; x.font = 'bold 150px Arial';
+  x.fillText(String(LAST.score) + ' điểm', 540, 430);
+  const rows = [
+    ['Bắn hạ', LAST.kills + '/' + LAST.total + ' từ'],
+    ['Độ chính xác gõ', LAST.acc + '%'],
+    ['Combo cao nhất', 'x' + LAST.combo],
+    ['Chủ đề', LAST.topic]
+  ];
+  let y = 540;
+  for (const [k, v] of rows) {
+    x.fillStyle = '#9fb2e0'; x.font = '36px Arial';
+    x.fillText(k, 540, y);
+    x.fillStyle = '#ffffff'; x.font = 'bold 44px Arial';
+    x.fillText(v, 540, y + 52);
+    y += 120;
+  }
+  x.fillStyle = '#ffd84d'; x.font = 'bold 36px Arial';
+  x.fillText('ORI ACADEMY ✈️ — TOEIC giỏi, sự nghiệp cất cánh', 540, 970);
+  x.fillStyle = '#d5def7'; x.font = '30px Arial';
+  x.fillText('0778 845 689 • 0906 303 373 • ' + LAST.date, 540, 1015);
+  return c;
+}
+function achievementText() {
+  return 'Tôi vừa ghi ' + LAST.score + ' điểm, bắn hạ ' + LAST.kills + '/' + LAST.total
+    + ' từ vựng TOEIC (' + LAST.topic + ') với TOEIC Space Typer của ORI ACADEMY! ✈️';
+}
+function saveAchievement() {
+  if (!LAST) return;
+  achievementCanvas().toBlob(blob => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'thanh-tich-space-typer.png';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    $('shareMsg').textContent = 'Đã lưu ảnh thành tựu, em đăng lên Facebook/Zalo nhé!';
+  }, 'image/png');
+}
+async function shareAchievement() {
+  if (!LAST) return;
+  const text = achievementText();
+  try {
+    const blob = await new Promise(res => achievementCanvas().toBlob(res, 'image/png'));
+    const file = new File([blob], 'thanh-tich-space-typer.png', { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: 'TOEIC Space Typer — Thành tích', text });
+      $('shareMsg').textContent = 'Đã mở bảng chia sẻ!';
+      return;
+    }
+    throw new Error('no file share');
+  } catch (e) {
+    try {
+      await navigator.clipboard.writeText(text);
+      $('shareMsg').textContent = 'Đã copy dòng thành tựu, em dán lên Facebook/Zalo nhé!';
+    } catch (e2) {
+      $('shareMsg').textContent = text;
+    }
+  }
+}
+$('saveImgBtn').onclick = saveAchievement;
+$('shareBtn').onclick = shareAchievement;
 function endGame(win, quit) {
   if (!G) return;
   G.over = true;
@@ -590,6 +699,9 @@ function endGame(win, quit) {
   $('rKills').textContent = G.kills + '/' + G.list.length;
   $('rAcc').textContent = acc + '%';
   $('rCombo').textContent = G.bestCombo;
+  LAST = { score: G.score, kills: G.kills, total: G.list.length, acc: acc, combo: G.bestCombo,
+           topic: G.topic, date: new Date().toLocaleDateString('vi-VN') };
+  $('shareMsg').textContent = '';
   const miss = G.missed;
   $('rMiss').innerHTML = miss.length
     ? miss.map(w => '<b>' + w.w + '</b> = ' + w.vi + ' <span style="color:#7c8db5">(' + w.pos + ')</span>').join('<br>')
